@@ -1,3 +1,8 @@
+//////////////Set up Wifi Variables//////////////////////
+// Include MQTT Lib
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+
 //Pin defs
 
 #define redPin D1 //pin of red led
@@ -10,7 +15,7 @@
 #define RFrecvPin D7 //Pin for 433 recv, active low.
 
 #define RFrecvPinBuffSize 200 //size of RF buffer to hold sampled data 
-#define IRrecvPinBuffSize 300 //size of IR buffer to hold sampled data
+#define IRrecvPinBuffSize 300 //size of IR buffer to hold sampled data {000111000111000}
 
 #define RFdataDecodedSize 256 //size of RF buffer to hold data to send
 #define IRdataDecodedSize 256 //size of IR buffer to hold data to send
@@ -18,6 +23,9 @@
 #define RFsendBuffSize 256 //size of RF buffer to hold data to send
 #define IRsendBuffSize 256 //size of IR buffer to hold data to send
 
+const char* ssid = "Jarvis";
+const char* password = "boldjungle246";
+const char* mqtt_server = "192.168.1.107";
 
 byte rfDataIn[RFrecvPinBuffSize];  //define sample arrays and allocate memory, this is RAW pin data, 0/1 stored per bit format
 byte irDataIn[IRrecvPinBuffSize];  //define sample arrays and allocate memory, this is RAW pin data, 0/1 stored per bit format
@@ -52,11 +60,20 @@ unsigned long timer0_count = 0; //gobal 32bit timer
 
 ////Variables to detect the start of RF packets//////
 boolean rfTriggerCondition = false;
-unsigned long lastLowRFsampleTime =0;
+unsigned long lastLowRFsampleTime = 0;
 boolean RFtrigger1 = false;
 boolean RFtrigger2 = false;
 
 
+
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+long lastMsg = 0;
+char msg[50];
+int value = 0;
+
+/////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 bool checkForData(byte* inputArray, byte arraysize, bool printArray) {
   int i = 0;
@@ -108,16 +125,45 @@ void printDataBits(byte* inputArray, int arrayLength) {
 /////////////////////Prints an Array Byte wise/////////////////////
 void printDataByte(byte* inputArray, int arraysize) {
   //Serial.print("Recieved IR Packet:");
-  Serial.print("{");
+
+  //String Signalstring = "";
+  //Signalstring = Signalstring + "{";
+  
+  //char* outputchar[arraysize];
+  String holding = "";
   for (int i = 0; i < arraysize; i++) {
-    Serial.print(inputArray[i]);
-    if (i < arraysize - 1) {
-      Serial.print(",");
-    } else {
-      Serial.println("}");
-    }
+    //Signalstring = Signalstring + inputArray[i];
+    holding = holding + (String) inputArray[i];
+    //outputchar[i]=(String)inputArray[i];
+    //Serial.print((String)inputArray[i]);
+    //outputchar[i]=char(44);
+//    if (i < arraysize - 1) {
+//      Signalstring = Signalstring + ",";
+//    } else {
+//      Signalstring = Signalstring + "}";
+//      
+//
+//    }
+
   }
   //Serial.println("");
+  //char buffchar[arraysize*2+2];
+
+
+//  Signalstring.toCharArray(outputchar, arraysize*2+1);
+
+
+  holding.trim();
+  Serial.println(holding);
+
+  holding  = "Packet Recieved - " + holding;
+  char charBuf[holding.length() + 1];
+  holding.toCharArray(charBuf, holding.length() + 1);
+
+  client.publish("outBridge", charBuf);
+
+  //Serial.println(Signalstring);
+  //Serial.println("length"+String(str_len));
 }
 ///////////////////////////////////////////////////////////////////////
 
@@ -137,8 +183,8 @@ void printDataHuman_old(byte* inputArray) {
       if (byte1 == 1 && byte2 == 1) {
         Serial.print("¯");
       } else {
-        if((byte1 == 0 && byte2==1)||(byte1 == 1 && byte2==0))
-        Serial.print("|");
+        if ((byte1 == 0 && byte2 == 1) || (byte1 == 1 && byte2 == 0))
+          Serial.print("|");
       }
     }
 
@@ -153,7 +199,7 @@ void printDataHuman(byte* inputArray) {
 
   boolean state = true;
 
-  for (int i = 1; i < arrayLength-1; i++) {
+  for (int i = 1; i < arrayLength - 1; i++) {
     byte counter = inputArray[i];
     for (int j = 0; j < counter; j++) {
       if (state == true) {
@@ -229,9 +275,8 @@ void timer0_ISR (void) {
   IRsend_ISR(); // this is called to generate the RF carrier pulses
 
   timer0_write(ESP.getCycleCount() + 1860); // = ~76khz @ 160mhz system clock, needs to be twice carrier freq of 38khz.
-                                            // Sets the next tick of the timer callback function.
+  // Sets the next tick of the timer callback function.
 }
-////////////////////////////////////////////////////////////////////////
 
 void sendIRpuls() {
   //(10);
@@ -281,10 +326,31 @@ void setup() {
   Serial.println("Ready....");
   /////////////////////////////////////////////////////////////////
 
+  ///////////Setup Wifi and Subscribe to MQTT//////////////////////
+  setup_wifi();
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
+  /////////////////////////////////////////////////////////////////
+
 }
 
 void loop() {
   //delay(1000);
   //sendIRpuls();
 
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
 }
+
+
+
+
+
+
+
+/// To go in own file ////
+
+
+
