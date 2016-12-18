@@ -1,16 +1,18 @@
 
 //byte testdata[] = {228, 64, 32, 8, 23, 8, 24, 7, 9, 7, 9, 7, 9, 7, 24, 8, 8, 7, 9, 8, 23, 8, 24, 8, 8, 8, 23, 8, 8, 8, 8, 8, 24, 7, 24, 8, 8, 8, 23, 8, 24, 8, 8, 8, 8, 8, 23, 8, 8, 8, 8, 8, 24, 7, 9, 7, 9, 7, 9, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 23, 8, 8, 8, 8, 8, 8, 8, 24, 7, 9, 7, 9, 7, 9, 7, 9, 7, 9, 7, 9, 7, 24, 8, 23, 8, 24, 8, 8, 8, 8, 8, 8, 8, 8, 7, 9, 7, 24, 8, 8, 8, 24, 7, 24, 8, 23, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 9, 7, 9, 7, 9, 7, 9, 7, 9, 7, 9, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 24, 7, 9, 7, 8, 8, 24, 8, 23, 8, 8, 8, 24, 8, 23, 8, 24, 7, 24, 8, 8, 8};
 
-byte testdata[] = {68,43,44,4,17,5,16,5,16,5,6,5,6,4,6,5,6,5,6,4,17,4,17,5,16,5,6,5,5,5,6,5,6,4,6,5,6,5,16,5,6,5,5,5,6,5,6,4,6,5,6,5,16,5,6,4,17,5,16,5,17,4,17,4,17,5,16,5};
+//byte testdata[] = {68,43,44,4,17,5,16,5,16,5,6,5,6,4,6,5,6,5,6,4,17,4,17,5,16,5,6,5,5,5,6,5,6,4,6,5,6,5,16,5,6,5,5,5,6,5,6,4,6,5,6,5,16,5,6,4,17,5,16,5,17,4,17,4,17,5,16,5};
 
+//byte testdata[]={68,85,86,9,33,9,33,10,33,9,12,9,12,9,12,9,12,9,12,9,33,10,33,9,33,9,12,9,12,9,12,9,12,9,12,9,12,10,32,10,12,9,12,9,12,9,12,9,12,11,10,9,33,10,11,10,33,9,33,9,33,9,33,9,33,10,33,10};
 
 
 
 
 void IRin_ISR() { //trigger to detect when there is a falling edge on IR input pin
   digitalWrite(redPin, HIGH);
+    detachInterrupt(D5);
   IRin_detected = true;
-  detachInterrupt(D5);
+
 
   //IR_NeedtoSend=true;
   //(40);
@@ -52,7 +54,8 @@ void IR_cleanPacket() { //convert raw data into pulse length format
 exitloop:
   irDataDecoded[0] = irOutputIndex;
   printDataByte(irDataDecoded, irOutputIndex);
-  printDataHuman(irDataDecoded);
+  //printDataHuman(irDataDecoded);
+  pubMQTT(irDataDecoded,"IRrecv");
   digitalWrite(redPin, LOW);
   //printDataBits();
 }
@@ -83,7 +86,7 @@ void IR_sample() { //funciton to sample and store the IR pin data
 }
 
 void IRsend_ISR() { //routine for sending IR pulses at 38khz.
-  //if(IR_NeedtoSend==true){
+  if(IR_NeedtoSend==true){
   if (IR_on == true) {
     IRsendPin_state = !IRsendPin_state; //toggle IR pin state to generate carrier signal
     digitalWrite(IRsendPin, IRsendPin_state);
@@ -91,7 +94,7 @@ void IRsend_ISR() { //routine for sending IR pulses at 38khz.
   } else {
     digitalWrite(IRsendPin, LOW);
     //Serial.print(IR_on);
-    //}
+    }
   }
 }
 
@@ -121,7 +124,7 @@ void IR_SendFuncPWM() {
   //  int packetLength = testdata[0];
 
 
-  if (IRsendSubIndex == testdata[IRsendIndex]) {
+  if (IRsendSubIndex == irDataOut[IRsendIndex]) {
     IR_on = !IR_on;
     IRsendSubIndex = 0;
     IRsendIndex = IRsendIndex + 1;
@@ -129,7 +132,7 @@ void IR_SendFuncPWM() {
   }
   IRsendSubIndex = IRsendSubIndex + 1;
   //
-  if (IRsendIndex == testdata[0]) {
+  if (IRsendIndex == irDataOut[0]) {
     if (IRpacketCounter < IRpacketRepeats) {
       IRsendIndex = 0;
       IRsendSubIndex = 0;
@@ -142,7 +145,7 @@ void IR_SendFuncPWM() {
       IRsendSubIndex = 0;
       Serial.print("Sent Packet over IR (repeats," + String(IRpacketCounter));
       Serial.print("): ");
-      printDataByte(testdata, testdata[0]);
+      printDataByte(irDataOut, irDataOut[0]);
       Serial.println("");
       IRpacketCounter = 0;
     }

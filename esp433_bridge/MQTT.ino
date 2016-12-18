@@ -1,0 +1,107 @@
+void MQTTcallback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("MQTT arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  noInterrupts();
+
+  String input;
+  input.reserve(5);
+  byte val = 0;
+  int Index = 0;
+
+  if ((char)payload[0] == 123) {
+
+    for (int i = 1; i < length; i++) { //decode comma delimited byte array... hopefully...
+      if ( (char)payload[i] == 44 || (char)payload[i] == 125) { //comma char.
+        //Serial.print("comma");
+        //Serial.println(input);
+        if (topic[1] == 'F') {
+          //Serial.print("I made it");
+          rfDataOut[Index] = input.toInt();
+          //Serial.println(rfDataOut[Index]);
+        }
+        
+        if (topic[1] == 'R') {
+
+          irDataOut[Index] = input.toInt();
+
+        }
+        //Serial.println(val);
+        //Serial.println(input);
+        input = "";
+        Index = Index + 1;
+        //        //Serial.println(Index);
+      } else {
+        input.concat(String((char)payload[i]));
+
+      }
+      if ((char)payload[i] == 125) {
+        //Serial.println("Complete Packet Recev");
+        if (topic[1] == 'R') {
+          sendIRpuls();
+          Serial.println("Sending IR");
+          return;
+          //Serial.println("Sending IR");
+
+        }
+        if (topic[1] == 'F') {
+          sendRFpuls();
+          //delay(5);
+          //sendRFpuls();
+          //delay(5);
+          //sendRFpuls();
+          Serial.println("Sending RF");
+          return;
+        }
+      }
+    }
+
+  } else {
+    Serial.println("INVALID MQTT MSG RECV");
+  }
+  interrupts();
+}
+
+
+
+
+
+
+void pubMQTT(byte* inputArray, char* topic) {
+  mqttbuff.concat("{");
+  for (int i = 0; i < inputArray[0]; i++) {
+    mqttbuff.concat(String((inputArray[i])));
+    if (i < inputArray[0] - 1) {
+      mqttbuff.concat(",");
+    }
+  }
+  mqttbuff.concat("}");
+  mqttbuff.toCharArray(mqttmsg, mqttbuff.length() + 1);
+  client.publish(topic, mqttmsg);
+  Serial.print("pub MQTT, topic:" + String(topic) + " msg: ");
+  Serial.println(mqttbuff);
+  mqttbuff = "";
+}
+
+
+//
+//void reconnect() {
+//  // Loop until we're reconnected
+//  while (!client.connected()) {
+//    Serial.print("Attempting MQTT connection...");
+//    // Attempt to connect
+//    if (client.connect("ESP8266Client")) {
+//      Serial.println("connected");
+//      // Once connected, publish an announcement...
+//      client.publish("outTopic", "hello world");
+//      // ... and resubscribe
+//      client.subscribe("inTopic");
+//    } else {
+//      Serial.print("failed, rc=");
+//      Serial.print(client.state());
+//      Serial.println(" try again in 5 seconds");
+//      // Wait 5 seconds before retrying
+//      delay(5000);
+//    }
+//  }
+//}
