@@ -73,6 +73,7 @@ void IR_sample() { //funciton to sample and store the IR pin data
         Serial.print("Raw IR Packet Recieved: ");
         IR_cleanPacket();
         //Serial.println("");
+        //client.publish("outBridge", "Raw IR Packet Recieved: ");
         attachInterrupt(D5, IRin_ISR, FALLING);
       }
     }

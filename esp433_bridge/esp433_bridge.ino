@@ -1,3 +1,8 @@
+//////////////Set up Wifi Variables//////////////////////
+// Include MQTT Lib
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+
 //Pin defs
 
 #include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
@@ -15,8 +20,13 @@
 #define RFsendPin D6 //Pin for 433 transmit, active high.
 #define RFrecvPin D7 //Pin for 433 recv, active low.
 
+<<<<<<< HEAD
 #define RFrecvPinBuffSize 128 //size of RF buffer to hold sampled data 
 #define IRrecvPinBuffSize 400 //size of IR buffer to hold sampled data
+=======
+#define RFrecvPinBuffSize 200 //size of RF buffer to hold sampled data 
+#define IRrecvPinBuffSize 300 //size of IR buffer to hold sampled data {000111000111000}
+>>>>>>> origin/master
 
 #define RFdataDecodedSize 256 //size of RF buffer to hold data to send
 #define IRdataDecodedSize 256 //size of IR buffer to hold data to send
@@ -24,6 +34,7 @@
 #define RFsendBuffSize 256 //size of RF buffer to hold data to send
 #define IRsendBuffSize 256 //size of IR buffer to hold data to send
 
+<<<<<<< HEAD
 const char* mqtt_server = "192.168.1.103";
 
 String mqttbuff;
@@ -31,6 +42,11 @@ char mqttmsg[1024];
 
 long minDelta = 640000;
 int minDeltaCycles = 152;
+=======
+const char* ssid = "Jarvis";
+const char* password = "boldjungle246";
+const char* mqtt_server = "192.168.1.107";
+>>>>>>> origin/master
 
 byte rfDataIn[RFrecvPinBuffSize];  //define sample arrays and allocate memory, this is RAW pin data, 0/1 stored per bit format
 byte irDataIn[IRrecvPinBuffSize];  //define sample arrays and allocate memory, this is RAW pin data, 0/1 stored per bit format
@@ -90,6 +106,15 @@ boolean RFtrigger1 = false;
 boolean RFtrigger2 = false;
 
 
+
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+long lastMsg = 0;
+char msg[50];
+int value = 0;
+
+/////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////
 bool checkForData(byte* inputArray, byte arraysize, bool printArray) {
   int i = 0;
@@ -141,16 +166,45 @@ void printDataBits(byte* inputArray, int arrayLength) {
 /////////////////////Prints an Array Byte wise/////////////////////
 void printDataByte(byte* inputArray, int arraysize) {
   //Serial.print("Recieved IR Packet:");
-  Serial.print("{");
+
+  //String Signalstring = "";
+  //Signalstring = Signalstring + "{";
+  
+  //char* outputchar[arraysize];
+  String holding = "";
   for (int i = 0; i < arraysize; i++) {
-    Serial.print(inputArray[i]);
-    if (i < arraysize - 1) {
-      Serial.print(",");
-    } else {
-      Serial.println("}");
-    }
+    //Signalstring = Signalstring + inputArray[i];
+    holding = holding + (String) inputArray[i];
+    //outputchar[i]=(String)inputArray[i];
+    //Serial.print((String)inputArray[i]);
+    //outputchar[i]=char(44);
+//    if (i < arraysize - 1) {
+//      Signalstring = Signalstring + ",";
+//    } else {
+//      Signalstring = Signalstring + "}";
+//      
+//
+//    }
+
   }
   //Serial.println("");
+  //char buffchar[arraysize*2+2];
+
+
+//  Signalstring.toCharArray(outputchar, arraysize*2+1);
+
+
+  holding.trim();
+  Serial.println(holding);
+
+  holding  = "Packet Recieved - " + holding;
+  char charBuf[holding.length() + 1];
+  holding.toCharArray(charBuf, holding.length() + 1);
+
+  client.publish("outBridge", charBuf);
+
+  //Serial.println(Signalstring);
+  //Serial.println("length"+String(str_len));
 }
 ///////////////////////////////////////////////////////////////////////
 
@@ -276,9 +330,12 @@ void timer0_ISR (void) {
   IRsend_ISR(); // this is called to generate the RF carrier pulses
 
   timer0_write(ESP.getCycleCount() + 1860); // = ~76khz @ 160mhz system clock, needs to be twice carrier freq of 38khz.
+<<<<<<< HEAD
   //ESP.wdtFeed(); //reset watchdog                                          // Sets the next tick of the timer callback function.
+=======
+  // Sets the next tick of the timer callback function.
+>>>>>>> origin/master
 }
-////////////////////////////////////////////////////////////////////////
 
 void sendIRpuls() {
   //(10);
@@ -358,6 +415,16 @@ void setup() {
   /////////////////////////////////////////////////////////////////
   mqttbuff.reserve(1000);
 
+<<<<<<< HEAD
+=======
+  ///////////Setup Wifi and Subscribe to MQTT//////////////////////
+  setup_wifi();
+  client.setServer(mqtt_server, 1883);
+  client.setCallback(callback);
+  /////////////////////////////////////////////////////////////////
+
+}
+>>>>>>> origin/master
 
 }
 //  byte irDataOut[]={48,24,8,23,8,8,24,23,8,24,8,8,24,7,24,8,24,23,8,8,24,8,24,7,151,23,8,24,8,8,23,24,8,23,9,7,24,8,24,8,23,24,8,8,24,7,24,8,1,1,1,1,1,1};
@@ -391,3 +458,22 @@ void loop() {
   
 
 
+<<<<<<< HEAD
+=======
+  if (!client.connected()) {
+    reconnect();
+  }
+  client.loop();
+}
+
+
+
+
+
+
+
+/// To go in own file ////
+
+
+
+>>>>>>> origin/master
