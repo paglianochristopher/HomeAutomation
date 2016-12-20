@@ -24,7 +24,14 @@
 #define RFsendBuffSize 256 //size of RF buffer to hold data to send
 #define IRsendBuffSize 256 //size of IR buffer to hold data to send
 
+/////////////////////MQTT///////////////////
 const char* mqtt_server = "192.168.1.103";
+const char* mqtt_clientid = "ESP433IR";
+const char* mqtt_username = "openhab";
+const char* mqtt_password = "h1A8iap@123";
+long lastReconnectAttempt = 0;
+////////////////////////////////////////////
+
 
 String mqttbuff;
 char mqttmsg[1024];
@@ -57,7 +64,7 @@ byte IRpacketCounter = 0; //Counter for number of times to repeat IR packet
 
 byte RFpacketRepeats = 5; //number of times to repeat transmitted IR packet.
 byte RFpacketCounter = 0; //Counter for number of times to repeat IR packet
-bool rfDelayTime=true;
+bool rfDelayTime = true;
 int rfDelayCounter = 0;
 int rfDelayCycles = 50; //Number of cycles of delay
 bool firstpacket = true;
@@ -298,7 +305,7 @@ void sendRFpuls() {
   RF_NeedtoSend = true;
   while (RF_NeedtoSend == true) {
     digitalWrite(redPin, HIGH);
-   // delay(10);
+    // delay(10);
   }
   digitalWrite(redPin, LOW);
   samplePins = true;
@@ -309,6 +316,16 @@ PubSubClient client(espClient);
 long lastMsg = 0;
 char msg[512];
 int value = 0;
+
+
+boolean reconnect() {
+  if (client.connect(mqtt_clientid, mqtt_username, mqtt_password)) {
+    client.publish("ESP/status", "reconnected....");
+    client.subscribe("RFtoSend");
+    client.subscribe("IRtoSend");
+  }
+  return client.connected();
+}
 
 void setup() {
   ///////////Set Variables////////////////////////////////////////////////
@@ -344,7 +361,7 @@ void setup() {
   wifiManager.autoConnect("ESP Network Bridge");
   client.setServer(mqtt_server, 1883);
   client.setCallback(MQTTcallback);
-  client.connect("ESP8266Client");
+  client.connect(mqtt_clientid, mqtt_username, mqtt_password);
   client.subscribe("RFtoSend");
   client.subscribe("IRtoSend");
   noInterrupts();
@@ -365,29 +382,23 @@ void loop() {
   //delay(1000);
   //sendIRpuls();
   //sendRFpuls();
-//  if (!client.connected()) {
-//    reconnect();
-//  }
 
-  client.loop();
-
-
-//
-  long now = millis();
-  if (now - lastMsg > 2000) {
-    //Serial.printf("loop heap size: %u\n", ESP.getFreeHeap());
-    //client.loop();
- //Serial.println("pulsing");
- //sendIRpuls();
- 
- lastMsg= now;
+  if (!client.connected()) {
+    long now = millis();
+    if (now - lastReconnectAttempt > 5000) {
+      lastReconnectAttempt = now;
+      // Attempt to reconnect
+      if (reconnect()) {
+        lastReconnectAttempt = 0;
+      }
     }
-//    //String thisString = String(rfDataOut[0],BIN);
-//    mqttbuff.toCharArray(mqttmsg, mqttbuff.length()+1);
-//    client.publish("outTopic",mqttmsg);
-//    Serial.println(mqttbuff);
-//    mqttbuff="";
+  } else {
+    // Client connected
+
+    client.loop();
   }
-  
+
+}
+
 
 

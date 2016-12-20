@@ -16,7 +16,7 @@ void RF_sample() {
         return;
       } else {
         unsigned long delta = ESP.getCycleCount() - lastLowRFsampleTime;
-        if ((delta > 500000)) {
+        if ((delta > 640000)) {
           //if(digitalRead(RFrecvPin) == true){
           //if//640000 cycles @ 160mhz = 4ms
           //Serial.println(delta);
@@ -116,7 +116,7 @@ void RF_cleanPacket() { //convert raw data into pulse length format
   }
 exitloop:
   rfDataDecoded[0] = rfOutputIndex;
-  int newval = rfDataDecoded[1]+67; //magic const 67
+  int newval = rfDataDecoded[1]+76; //magic const 67
   if(newval<255){
   rfDataDecoded[1]=newval;
   }else{
