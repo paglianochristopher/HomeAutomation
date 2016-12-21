@@ -16,7 +16,7 @@ void RF_sample() {
         return;
       } else {
         unsigned long delta = ESP.getCycleCount() - lastLowRFsampleTime;
-        if ((delta > 640000)) {
+        if ((delta > 500000)) {
           //if(digitalRead(RFrecvPin) == true){
           //if//640000 cycles @ 160mhz = 4ms
           //Serial.println(delta);
@@ -25,6 +25,7 @@ void RF_sample() {
           rfTriggerCondition = true;
           RFclearArray();
           digitalWrite(redPin, HIGH);
+          //digitalWrite(D4, LOW);
 
           //lastLowRFsampleTime=ESP.getCycleCount();
           //}
@@ -54,7 +55,9 @@ void RF_sample() {
           rfTriggerCondition = false;
           rfDataIn[0] = 0; //first bit is always a 1, clear this.
           //printDataBits(rfDataIn, RFrecvPinBuffSize);
+          
           RF_cleanPacket();
+          
           //boolean rc = compare_arrays(test1,rfDataDecoded);
           //Serial.println("Result is:");
           //Serial.println(rc);
@@ -108,7 +111,7 @@ void RF_cleanPacket() { //convert raw data into pulse length format
       absIndex = absIndex + 1;
       //Serial.println(absIndex);
 
-      if ((absIndex - prevAbsIndex) > 100 and (rfOutputIndex > 3)) {
+      if ((absIndex - prevAbsIndex) > 100 and (rfOutputIndex > 10)) {
         goto exitloop;
       }
     }
@@ -116,20 +119,22 @@ void RF_cleanPacket() { //convert raw data into pulse length format
   }
 exitloop:
   rfDataDecoded[0] = rfOutputIndex;
-  int newval = rfDataDecoded[1]+76; //magic const 67
+  int newval = rfDataDecoded[1]+60; //magic const 60
   if(newval<255){
   rfDataDecoded[1]=newval;
   }else{
     rfDataDecoded[1]=255;
   }
 
-  if (rfDataDecoded[0] > 1) {
+  if (rfDataDecoded[0] > 1 && CheckforValidity(rfDataDecoded)) {
     Serial.print("Raw RF Packet Recieved:");
     printDataByte(rfDataDecoded, rfOutputIndex);
-    pubMQTT(rfDataDecoded, "RFrecv");
+    pubMQTT(rfDataDecoded, "ESP/RFrecv");
     //printDataHuman(rfDataDecoded);
     digitalWrite(redPin, LOW);
+    //digitalWrite(D4, HIGH);
     //printDataBits();
+    lastRFrecv = millis();
   }
 }
 
@@ -154,6 +159,7 @@ void RF_SendPacket() {
 //  firstpacket=false;
 //  RF_on = false;
 //  }else{
+
     if (RFsendSubIndex == rfDataOut[RFsendIndex+1]){
       RF_on = !RF_on;
       digitalWrite(RFsendPin, RF_on);
@@ -189,7 +195,7 @@ void RF_SendPacket() {
         RF_NeedtoSend = false;
         rfDelayTime = true;
         firstpacket=true;
-        rfDelayCounter = 0;
+        //rfDelayCounter = 0;
       }
     }
   }
