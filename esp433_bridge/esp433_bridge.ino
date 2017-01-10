@@ -10,7 +10,7 @@
 #define grnPin D2 //pin of blue led
 #define bluPin D3 //pin of green led
 #define IRsendPin D4 //pin of IR led
-#define IRrecvPin D6 //pin of IR reciever
+#define IRrecvPin D5 //pin of IR reciever
 
 #define RFsendPin D6 //Pin for 433 transmit, active high.
 #define RFrecvPin D7 //Pin for 433 recv, active low.
@@ -57,7 +57,7 @@ int minDeltaCycles = 152;
 
 //////////////////////RF Buffers and Structs/////////////////////////////
 #define RFrecvPinBuffSize 128 //size of RF buffer to hold sampled data 
-#define AntiCollisionDelay 100 //won't transmit a packet within x number of milliseconds of recieving a packet, basic packet collision avoidance.
+#define AntiCollisionDelay 50 //won't transmit a packet within x number of milliseconds of recieving a packet, basic packet collision avoidance.
 
 byte rfDataIn[RFrecvPinBuffSize];  //define sample arrays and allocate memory, this is RAW pin data, 0/1 stored per bit format: 0000011111110000001111111
 byte rfDataDecoded[RFdataDecodedSize];  //Array to hold decoded RF data,  first byte defines length of data, each byte is timer0/4 count before state transistion. 

@@ -2,7 +2,7 @@ void MQTTcallback(char* topic, byte* payload, unsigned int length) {
   Serial.print("MQTT arrived [");
   Serial.print(topic);
   Serial.print("] ");
-  noInterrupts();
+  //noInterrupts();
 
   String input;
   input.reserve(5);
@@ -40,7 +40,7 @@ void MQTTcallback(char* topic, byte* payload, unsigned int length) {
 
         }
         if ((char)payload[i] == 125) {
-          //Serial.println("Complete Packet Recev");
+          //Serial.println("Complete Packet Recev IR");
           if (topic[5] == 'R') {
             sendIRpuls();
             //Serial.println("Sending IR");
@@ -66,7 +66,7 @@ void MQTTcallback(char* topic, byte* payload, unsigned int length) {
       } else {
         Serial.println("INVALID MQTT MSG RECV");
       }
-      interrupts();
+     // interrupts();
     }
   }
 

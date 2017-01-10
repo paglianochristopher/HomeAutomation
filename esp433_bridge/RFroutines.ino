@@ -16,7 +16,7 @@ void RF_sample() {
         return;
       } else {
         unsigned long delta = ESP.getCycleCount() - lastLowRFsampleTime;
-        if ((delta > 500000)) {
+        if ((delta > 640000)) {
           //if(digitalRead(RFrecvPin) == true){
           //if//640000 cycles @ 160mhz = 4ms
           //Serial.println(delta);
@@ -25,57 +25,54 @@ void RF_sample() {
           rfTriggerCondition = true;
           RFclearArray();
           digitalWrite(redPin, HIGH);
-          //digitalWrite(D4, LOW);
 
           //lastLowRFsampleTime=ESP.getCycleCount();
           //}
         }
       }
     }
-  } else {
-    //else {
-    //    if (RFtrigger2 == false) {
-    //      if (digitalRead(RFrecvPin) == true) {
-    //        RFtrigger2 = true;
-    //        return;
-    //      }
-    //    } else {
+  }else{
+  //else {
+//    if (RFtrigger2 == false) {
+//      if (digitalRead(RFrecvPin) == true) {
+//        RFtrigger2 = true;
+//        return;
+//      }
+//    } else {
 
-    ////////////////Top Half of function waits for the RF signal to stay low for 4ms, this indicates that the reciever is about to get a packet of data.////////////////
-    ////////////////Bottom half of function waits until this is true and then starts sampling the data//////////////////////////////////////////////////////////////////
+      ////////////////Top Half of function waits for the RF signal to stay low for 4ms, this indicates that the reciever is about to get a packet of data.////////////////
+      ////////////////Bottom half of function waits until this is true and then starts sampling the data//////////////////////////////////////////////////////////////////
 
-    if (bitRFindex == 8) {
-      bitRFindex = 0;
-      RFindex += 1;
-      if (RFindex == RFrecvPinBuffSize) {
-        RFindex = 0;
-        //printData();
-        //RF_cleanPacket();
-        //printDataHuman(rfDataIn);
-        rfTriggerCondition = false;
-        rfDataIn[0] = 0; //first bit is always a 1, clear this.
-        //printDataBits(rfDataIn, RFrecvPinBuffSize);
-
-        RF_cleanPacket();
-
-        //boolean rc = compare_arrays(test1,rfDataDecoded);
-        //Serial.println("Result is:");
-        //Serial.println(rc);
-        //        if(rc){
-        //          Serial.print("WE GOT ITTTTT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        //        }
-        ////This branch is called when the function fills the buffer, the data is then passed on for analysis.
+      if (bitRFindex == 8) {
+        bitRFindex = 0;
+        RFindex += 1;
+        if (RFindex == RFrecvPinBuffSize) {
+          RFindex = 0;
+          //printData();
+          //RF_cleanPacket();
+          //printDataHuman(rfDataIn);
+          rfTriggerCondition = false;
+          rfDataIn[0] = 0; //first bit is always a 1, clear this.
+          //printDataBits(rfDataIn, RFrecvPinBuffSize);
+          RF_cleanPacket();
+          //boolean rc = compare_arrays(test1,rfDataDecoded);
+          //Serial.println("Result is:");
+          //Serial.println(rc);
+          //        if(rc){
+          //          Serial.print("WE GOT ITTTTT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+          //        }
+          ////This branch is called when the function fills the buffer, the data is then passed on for analysis.
+        }
       }
-    }
-    if (digitalRead(RFrecvPin)) {
-      bitSet(rfDataIn[RFindex], bitRFindex);
-    } else {
-      bitClear(rfDataIn[RFindex], bitRFindex);
-    }
-    bitRFindex = bitRFindex + 1;
+      if (digitalRead(RFrecvPin)) {
+        bitSet(rfDataIn[RFindex], bitRFindex);
+      } else {
+        bitClear(rfDataIn[RFindex], bitRFindex);
+      }
+      bitRFindex = bitRFindex + 1;
 
-  }
-}
+    }
+ }
 //}
 
 void RFclearArray() {
@@ -111,7 +108,7 @@ void RF_cleanPacket() { //convert raw data into pulse length format
       absIndex = absIndex + 1;
       //Serial.println(absIndex);
 
-      if ((absIndex - prevAbsIndex) > 100 and (rfOutputIndex > 10)) {
+      if ((absIndex - prevAbsIndex) > 100 and (rfOutputIndex > 3)) {
         goto exitloop;
       }
     }
@@ -119,66 +116,83 @@ void RF_cleanPacket() { //convert raw data into pulse length format
   }
 exitloop:
   rfDataDecoded[0] = rfOutputIndex;
-  int newval = rfDataDecoded[1] + 60; //magic const 60
-  if (newval < 255) {
-    rfDataDecoded[1] = newval;
-  } else {
-    rfDataDecoded[1] = 255;
+  int newval = rfDataDecoded[1]+76; //magic const 67
+  if(newval<255){
+  rfDataDecoded[1]=newval;
+  }else{
+    rfDataDecoded[1]=255;
   }
 
-  if (rfDataDecoded[0] > 1 && CheckforValidity(rfDataDecoded)) {
+  if (rfDataDecoded[0] > 1) {
     Serial.print("Raw RF Packet Recieved:");
     printDataByte(rfDataDecoded, rfOutputIndex);
     pubMQTT(rfDataDecoded, "ESP/RFrecv");
     //printDataHuman(rfDataDecoded);
     digitalWrite(redPin, LOW);
-    //digitalWrite(D4, HIGH);
     //printDataBits();
-    lastRFrecv = millis();
   }
 }
 
 
 void RF_SendPacket() {
 
-  if (RFsendSubIndex == rfDataOut[RFsendIndex + 1]) {
-    RF_on = !RF_on;
-    digitalWrite(RFsendPin, RF_on);
-    RFsendSubIndex = 0;
-    RFsendIndex = RFsendIndex + 1;
-    //Serial.print("1");
-  }
-  RFsendSubIndex = RFsendSubIndex + 1;
-  if (RFsendIndex == rfDataOut[0] - 1) {
-    digitalWrite(RFsendPin, LOW);
-    if (RFpacketCounter < RFpacketRepeats) {
-      //digitalWrite(RFsendPin, LOW);
-      RF_on = false;
-      RFsendIndex = 0;
+//  if (rfDelayTime == true) {
+//    digitalWrite(RFsendPin, HIGH);
+//    RF_on = true;
+//    rfDelayCounter = rfDelayCounter + 1;
+//    if (rfDelayCounter == 100) {
+//      rfDelayTime = false;
+//      rfDelayCounter = 0;
+//      //RF_on = true;
+//      //digitalWrite(RFsendPin,HIGH);
+//      //RF_on=true;
+//    }
+//  } else {
+//
+//  if(firstpacket){
+//  digitalWrite(RFsendPin, HIGH);
+//  firstpacket=false;
+//  RF_on = false;
+//  }else{
+    if (RFsendSubIndex == rfDataOut[RFsendIndex+1]){
+      RF_on = !RF_on;
+      digitalWrite(RFsendPin, RF_on);
+      //Serial.print(RF_on);
       RFsendSubIndex = 0;
-      RFpacketCounter = RFpacketCounter + 1;
-      //Serial.println("sent part data");
-      //RF_on = true;
-      //digitalWrite(RFsendPin, LOW);
-      rfDelayTime = true;
-      firstpacket = true;
-
-    } else {
-      RF_on = false;
-      RFsendIndex = 0;
-      RFsendSubIndex = 0;
-      Serial.print("Sent Packet over RF (repeats," + String(RFpacketCounter));
-      Serial.print("): ");
-      printDataByte(rfDataOut, rfDataOut[0]);
-      Serial.println("");
-      RFpacketCounter = 0;
+      RFsendIndex = RFsendIndex + 1;
+      //Serial.println(rfDataOut[RFsendIndex]);
+    }
+    RFsendSubIndex = RFsendSubIndex + 1;
+    if (RFsendIndex == rfDataOut[0]-1) {
       digitalWrite(RFsendPin, LOW);
-      RF_NeedtoSend = false;
-      rfDelayTime = true;
-      firstpacket = true;
-      //rfDelayCounter = 0;
+      if (RFpacketCounter < RFpacketRepeats) {
+        //digitalWrite(RFsendPin, LOW);
+        RF_on = false;
+        RFsendIndex = 0;
+        RFsendSubIndex = 0;
+        RFpacketCounter = RFpacketCounter + 1;
+        //Serial.println("sent part data");
+        //RF_on = true;
+        //digitalWrite(RFsendPin, LOW);
+        rfDelayTime = true;
+        firstpacket=true;
+
+      } else {
+        RF_on = false;
+        RFsendIndex = 0;
+        RFsendSubIndex = 0;
+        Serial.print("Sent Packet over RF (repeats," + String(RFpacketCounter));
+        Serial.print("): ");
+        printDataByte(rfDataOut, rfDataOut[0]);
+        RFpacketCounter = 0;
+        digitalWrite(RFsendPin, LOW);
+        RF_NeedtoSend = false;
+        rfDelayTime = true;
+        firstpacket=true;
+        rfDelayCounter = 0;
+      }
     }
   }
-}
+  //}
 //}
-//}
+
