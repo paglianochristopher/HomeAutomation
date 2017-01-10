@@ -56,7 +56,7 @@ long minDelta = 500000;
 int minDeltaCycles = 152;
 
 //////////////////////RF Buffers and Structs/////////////////////////////
-#define RFrecvPinBuffSize 128 //size of RF buffer to hold sampled data 
+#define RFrecvPinBuffSize 256 //size of RF buffer to hold sampled data 
 #define AntiCollisionDelay 100 //won't transmit a packet within x number of milliseconds of recieving a packet, basic packet collision avoidance.
 
 byte rfDataIn[RFrecvPinBuffSize];  //define sample arrays and allocate memory, this is RAW pin data, 0/1 stored per bit format: 0000011111110000001111111
@@ -68,6 +68,8 @@ unsigned long lastRFrecv = 0; //Timestamp (ms) when the last RF packet was detec
 
 int RFsendIndex; //used in send function to track current index
 int RFsendSubIndex; //used in send function to track current index
+
+bool RFisr = false;
 ////////////////////////////////////////////////////////////////////////
 
 /////////////////////IR Bufffers and Structs/////////////////////////////
@@ -250,6 +252,7 @@ void setup() {
   interrupts();
   //ESP.wdtDisable();
   attachInterrupt(D5, IRin_ISR, FALLING);
+  attachInterrupt(RFrecvPin, RFin_ISR, RISING);
   Serial.println("Connected to Wifi and ready....");
   timer0_write(ESP.getCycleCount() + 160000000L); // Adds a small delay  to the first timer0 call.
   /////////////////////////////////////////////////////////////////

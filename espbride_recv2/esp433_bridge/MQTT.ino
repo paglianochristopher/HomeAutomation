@@ -93,6 +93,7 @@ void pubMQTT(byte* inputArray, char* topic) {
 
 void HandleMQTT() {
   if (!client.connected()) {
+    Serial.println("MQTT LOST");
     long now = millis();
     if (now - lastReconnectAttempt > 2500) {
       lastReconnectAttempt = now;

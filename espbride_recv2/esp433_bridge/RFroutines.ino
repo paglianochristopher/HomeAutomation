@@ -1,7 +1,16 @@
 
-
+void RFin_ISR() { //trigger to detect when there is a falling edge on IR input pin
+  //digitalWrite(redPin, HIGH);
+  detachInterrupt(RFrecvPin);
+  //IRin_detected = true;
+  
+  //Serial.println("detect");
+  //rfTriggerCondition=true;
+  RFisr=true;
+}
 
 void RF_sample() {
+  if(RFisr==true){
   if (rfTriggerCondition == false) {
     if (digitalRead(RFrecvPin) == true) {
       RFtrigger1 = false;
@@ -76,6 +85,7 @@ void RF_sample() {
 
   }
 }
+}
 //}
 
 void RFclearArray() {
@@ -111,7 +121,7 @@ void RF_cleanPacket() { //convert raw data into pulse length format
       absIndex = absIndex + 1;
       //Serial.println(absIndex);
 
-      if ((absIndex - prevAbsIndex) > 100 and (rfOutputIndex > 10)) {
+      if ((absIndex - prevAbsIndex) > 500 and (rfOutputIndex > 255)) {
         goto exitloop;
       }
     }
@@ -125,6 +135,7 @@ exitloop:
   } else {
     rfDataDecoded[1] = 255;
   }
+  
 
   if (rfDataDecoded[0] > 1 && CheckforValidity(rfDataDecoded)) {
     Serial.print("Raw RF Packet Recieved:");
@@ -136,6 +147,8 @@ exitloop:
     //printDataBits();
     lastRFrecv = millis();
   }
+    attachInterrupt(RFrecvPin, RFin_ISR, RISING);
+    RFisr=false;
 }
 
 
