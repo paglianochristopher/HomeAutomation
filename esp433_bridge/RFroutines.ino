@@ -24,6 +24,7 @@ void RF_sample() {
           //RFtrigger2 = false;
           rfTriggerCondition = true;
           RFclearArray();
+          
           digitalWrite(redPin, HIGH);
 
           //lastLowRFsampleTime=ESP.getCycleCount();
@@ -116,6 +117,7 @@ void RF_cleanPacket() { //convert raw data into pulse length format
   }
 exitloop:
   rfDataDecoded[0] = rfOutputIndex;
+  lastRFrecv=millis();
   int newval = rfDataDecoded[1]+76; //magic const 67
   if(newval<255){
   rfDataDecoded[1]=newval;
@@ -123,10 +125,11 @@ exitloop:
     rfDataDecoded[1]=255;
   }
 
-  if (rfDataDecoded[0] > 1) {
+  if (rfDataDecoded[0] > 1 and CheckforValidity(rfDataDecoded)==true) {
     Serial.print("Raw RF Packet Recieved:");
     printDataByte(rfDataDecoded, rfOutputIndex);
     pubMQTT(rfDataDecoded, "ESP/RFrecv");
+    
     //printDataHuman(rfDataDecoded);
     digitalWrite(redPin, LOW);
     //printDataBits();
@@ -195,4 +198,5 @@ void RF_SendPacket() {
   }
   //}
 //}
+
 

@@ -8,14 +8,15 @@ const char IntroMessage[] PROGMEM  =
 "ESP/BLED      ---MQTT Sub Topic, Set RED Led Brightness (0-255)\n"
 "ESP/Status    ---MQTT Pub Topic, Publishes Debug Messages to here\n"};
 
-void PrintIntroMessageTelnet(){
-  strcpy_P(mqttmsg, (char*)pgm_read_word(&(IntroMessage[0])));
-  printTelent(mqttmsg);
-}
+//void PrintIntroMessageTelnet(){
+//  strcpy_P(mqttmsg, (char*)pgm_read_word(&(IntroMessage[0])));
+//  printTelent(mqttmsg);
+//}
 
 void PrintIntroMessageSerial(){
   strcpy_P(mqttmsg, (char*)pgm_read_word(&(IntroMessage[0])));
   Serial.print(mqttmsg);
 }
+
 
 

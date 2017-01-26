@@ -9,7 +9,7 @@ bool CheckforValidity(byte* array1) {
         count = count + 1;
       }
     }
-    if (count > 3) {
+    if (count > 2) {
       return false;
     } else {
       return true;
@@ -106,7 +106,7 @@ void printDataHuman_old(byte* inputArray) {
       Serial.print("_");
     } else {
       if (byte1 == 1 && byte2 == 1) {
-        Serial.print("¯");
+        Serial.print("Â¯");
       } else {
         if ((byte1 == 0 && byte2 == 1) || (byte1 == 1 && byte2 == 0))
           Serial.print("|");
@@ -173,4 +173,5 @@ void printDataBits(byte* inputArray, int arrayLength) {
   Serial.println("");
 }
 ///////////////////////////////////////////////////////////////////////
+
 

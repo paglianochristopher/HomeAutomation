@@ -57,7 +57,7 @@ int minDeltaCycles = 152;
 
 //////////////////////RF Buffers and Structs/////////////////////////////
 #define RFrecvPinBuffSize 128 //size of RF buffer to hold sampled data 
-#define AntiCollisionDelay 50 //won't transmit a packet within x number of milliseconds of recieving a packet, basic packet collision avoidance.
+#define AntiCollisionDelay 100 //won't transmit a packet within x number of milliseconds of recieving a packet, basic packet collision avoidance.
 
 byte rfDataIn[RFrecvPinBuffSize];  //define sample arrays and allocate memory, this is RAW pin data, 0/1 stored per bit format: 0000011111110000001111111
 byte rfDataDecoded[RFdataDecodedSize];  //Array to hold decoded RF data,  first byte defines length of data, each byte is timer0/4 count before state transistion. 
@@ -260,9 +260,8 @@ void setup() {
 
 void HandleRFtransmit() {
   if (RFaddtoQue == true) {
-    if ((millis() - lastRFrecv) < AntiCollisionDelay) {
-      return;
-    } else {
+    if ((millis() - lastRFrecv) > AntiCollisionDelay) {
+
       sendRFpuls();
       RFaddtoQue = false;
     }
@@ -281,6 +280,7 @@ void loop() {
   }
   HandleRFtransmit();
 }
+
 
 
 
